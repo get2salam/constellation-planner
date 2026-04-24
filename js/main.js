@@ -1,5 +1,7 @@
+import { showToast } from "./feedback.js";
 import { exportConstellation, importConstellation } from "./io.js";
 import { KIND_META, KINDS, STATUSES, STATUS_META, priorityScore } from "./model.js";
+import { mountShortcuts } from "./shortcuts.js";
 import { actions, getState, initStore, selectRankedStars, selectStats, selectVisibleStars, subscribe } from "./store.js";
 import { seedConstellation } from "./seeds.js";
 import { renderConstellation } from "./sky.js";
@@ -180,10 +182,12 @@ document.addEventListener("click", (event) => {
 
 document.querySelector("[data-action='new-star']")?.addEventListener("click", () => {
   actions.addStar({ title: "New star", note: "Define why this matters." });
+  showToast("Added a fresh star.", "success");
 });
 
 document.querySelector("[data-action='export']")?.addEventListener("click", () => {
   exportConstellation();
+  showToast("Downloaded your constellation backup.", "success");
 });
 
 document.querySelector("[data-action='import']")?.addEventListener("click", () => {
@@ -244,6 +248,8 @@ document.addEventListener("click", (event) => {
   if (!removeButton) return;
   actions.removeStar(removeButton.dataset.starId);
 });
+
+mountShortcuts();
 
 subscribe((state) => {
   if (!state.ui.selectedId && state.stars.length) {
