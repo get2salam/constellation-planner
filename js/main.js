@@ -1,4 +1,5 @@
 import { actions, initStore, selectStats, subscribe } from "./store.js";
+import { seedConstellation } from "./seeds.js";
 
 const mapTitleEl = document.querySelector("[data-role='map-title']");
 const mapNoteEl = document.querySelector("[data-role='map-note']");
@@ -36,4 +37,4 @@ document.querySelector("[data-action='new-star']")?.addEventListener("click", ()
 });
 
 subscribe(render);
-initStore();
+initStore({ seed: seedConstellation });
