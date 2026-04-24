@@ -4,6 +4,7 @@ import { KIND_META, KINDS, STATUSES, STATUS_META, priorityScore } from "./model.
 import { mountShortcuts } from "./shortcuts.js";
 import { actions, getState, initStore, selectRankedStars, selectStats, selectVisibleStars, subscribe } from "./store.js";
 import { seedConstellation } from "./seeds.js";
+import { renderRoadmap } from "./roadmap.js";
 import { renderConstellation } from "./sky.js";
 
 const mapTitleEl = document.querySelector("[data-role='map-title']");
@@ -160,7 +161,7 @@ function render(state) {
   searchEl.value = state.ui.search;
   kindFilterEl.innerHTML = `<option value="all">All kinds</option>${KINDS.map((kind) => `<option value="${kind}" ${state.ui.kindFilter === kind ? "selected" : ""}>${KIND_META[kind].label}</option>`).join("")}`;
   statusFilterEl.innerHTML = `<option value="all">All stages</option>${STATUSES.map((status) => `<option value="${status}" ${state.ui.statusFilter === status ? "selected" : ""}>${STATUS_META[status].label}</option>`).join("")}`;
-  canvasEl.innerHTML = renderConstellation(state, visibleStars);
+  canvasEl.innerHTML = state.ui.view === 'roadmap' ? renderRoadmap(visibleStars) : renderConstellation(state, visibleStars);
   ledgerEl.innerHTML = visibleStars.length
     ? renderLedger(state, visibleStars)
     : `
@@ -183,6 +184,10 @@ document.addEventListener("click", (event) => {
 document.querySelector("[data-action='new-star']")?.addEventListener("click", () => {
   actions.addStar({ title: "New star", note: "Define why this matters." });
   showToast("Added a fresh star.", "success");
+});
+
+document.querySelectorAll("[data-action='set-view']").forEach((button) => {
+  button.addEventListener('click', () => actions.setUI({ view: button.dataset.view }));
 });
 
 document.querySelector("[data-action='export']")?.addEventListener("click", () => {
