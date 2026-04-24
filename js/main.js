@@ -1,5 +1,6 @@
-import { actions, initStore, selectStats, subscribe } from "./store.js";
+import { actions, initStore, selectStats, selectVisibleStars, subscribe } from "./store.js";
 import { seedConstellation } from "./seeds.js";
+import { renderConstellation } from "./sky.js";
 
 const mapTitleEl = document.querySelector("[data-role='map-title']");
 const mapNoteEl = document.querySelector("[data-role='map-note']");
@@ -12,22 +13,19 @@ const ledgerEl = document.querySelector("[data-role='ledger']");
 
 function render(state) {
   const stats = selectStats(state);
+  const visibleStars = selectVisibleStars(state);
   mapTitleEl.textContent = state.mapTitle;
   mapNoteEl.textContent = state.mapNote;
   starsEl.textContent = String(stats.stars);
   linksEl.textContent = String(stats.links);
   activeBetsEl.textContent = String(stats.activeBets);
   topPriorityEl.textContent = stats.topPriority;
-  canvasEl.innerHTML = `
-    <div>
-      <strong>Constellation canvas</strong>
-      <p>${stats.stars ? `${stats.stars} stars will render here next.` : "The interactive star map lands in the next commit."}</p>
-    </div>
-  `;
+  canvasEl.innerHTML = renderConstellation(state, visibleStars);
   ledgerEl.innerHTML = `
     <div>
       <strong>Mission ledger</strong>
       <p>${stats.topPriority !== "—" ? `Current top priority: ${stats.topPriority}` : "Stars, filters, and insights will appear here."}</p>
+      <p>${visibleStars.length} visible stars on the sky map.</p>
     </div>
   `;
 }
