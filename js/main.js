@@ -1,3 +1,4 @@
+import { KIND_META, STATUS_META, priorityScore } from "./model.js";
 import { actions, initStore, selectStats, selectVisibleStars, subscribe } from "./store.js";
 import { seedConstellation } from "./seeds.js";
 import { renderConstellation } from "./sky.js";
@@ -11,6 +12,40 @@ const topPriorityEl = document.querySelector("[data-role='top-priority']");
 const canvasEl = document.querySelector("[data-role='canvas']");
 const ledgerEl = document.querySelector("[data-role='ledger']");
 
+function renderLedger(state, visibleStars) {
+  const rows = visibleStars
+    .map((star) => `
+      <li class="ledger-item ${state.ui.selectedId === star.id ? "is-selected" : ""}" data-action="select-star" data-star-id="${star.id}">
+        <div class="ledger-row">
+          <strong>${star.title}</strong>
+          <span class="priority">Priority ${priorityScore(star)}</span>
+        </div>
+        <div class="chips">
+          <span class="chip">${KIND_META[star.kind].label}</span>
+          <span class="chip">${STATUS_META[star.status].label}</span>
+          <span class="chip">Impact ${star.impact}</span>
+          <span class="chip">Confidence ${star.confidence}</span>
+        </div>
+        <p>${star.note || "No notes yet."}</p>
+      </li>
+    `)
+    .join("");
+
+  return `
+    <div class="stack">
+      <div class="ledger-head">
+        <div>
+          <strong>Mission ledger</strong>
+          <p>Prioritized stars from your visible constellation.</p>
+        </div>
+      </div>
+      <ul class="ledger-list">
+        ${rows}
+      </ul>
+    </div>
+  `;
+}
+
 function render(state) {
   const stats = selectStats(state);
   const visibleStars = selectVisibleStars(state);
@@ -21,14 +56,23 @@ function render(state) {
   activeBetsEl.textContent = String(stats.activeBets);
   topPriorityEl.textContent = stats.topPriority;
   canvasEl.innerHTML = renderConstellation(state, visibleStars);
-  ledgerEl.innerHTML = `
-    <div>
-      <strong>Mission ledger</strong>
-      <p>${stats.topPriority !== "—" ? `Current top priority: ${stats.topPriority}` : "Stars, filters, and insights will appear here."}</p>
-      <p>${visibleStars.length} visible stars on the sky map.</p>
-    </div>
-  `;
+  ledgerEl.innerHTML = visibleStars.length
+    ? renderLedger(state, visibleStars)
+    : `
+      <div>
+        <strong>Mission ledger</strong>
+        <p>${stats.topPriority !== "—" ? `Current top priority: ${stats.topPriority}` : "Stars, filters, and insights will appear here."}</p>
+        <p>${visibleStars.length} visible stars on the sky map.</p>
+      </div>
+    `;
 }
+
+document.addEventListener("click", (event) => {
+  const starId = event.target.closest("[data-star-id]")?.dataset.starId;
+  if (starId) {
+    actions.setUI({ selectedId: starId });
+  }
+});
 
 document.querySelector("[data-action='new-star']")?.addEventListener("click", () => {
   actions.addStar({ title: "New star", note: "Define why this matters." });
