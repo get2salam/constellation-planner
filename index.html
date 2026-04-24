@@ -24,8 +24,10 @@
         </div>
         <div></div>
         <div class="toolbar">
-          <button class="btn">Export</button>
+          <button class="btn" data-action="import">Import</button>
+          <button class="btn" data-action="export">Export</button>
           <button class="btn btn-primary" data-action="new-star">New star</button>
+          <input id="import-file" type="file" accept=".json,application/json" hidden />
         </div>
       </header>
 

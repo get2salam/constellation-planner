@@ -1,3 +1,4 @@
+import { exportConstellation, importConstellation } from "./io.js";
 import { KIND_META, KINDS, STATUSES, STATUS_META, priorityScore } from "./model.js";
 import { actions, getState, initStore, selectRankedStars, selectStats, selectVisibleStars, subscribe } from "./store.js";
 import { seedConstellation } from "./seeds.js";
@@ -181,6 +182,14 @@ document.querySelector("[data-action='new-star']")?.addEventListener("click", ()
   actions.addStar({ title: "New star", note: "Define why this matters." });
 });
 
+document.querySelector("[data-action='export']")?.addEventListener("click", () => {
+  exportConstellation();
+});
+
+document.querySelector("[data-action='import']")?.addEventListener("click", () => {
+  document.querySelector('#import-file')?.click();
+});
+
 document.addEventListener("click", (event) => {
   const addLinkButton = event.target.closest("[data-action='add-link']");
   if (addLinkButton) {
@@ -210,7 +219,20 @@ document.addEventListener("input", (event) => {
   actions.updateStar(starId, { [field]: event.target.value });
 });
 
-document.addEventListener("change", (event) => {
+document.addEventListener("change", async (event) => {
+  if (event.target.id === 'import-file') {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      await importConstellation(file);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Import failed.');
+    } finally {
+      event.target.value = '';
+    }
+    return;
+  }
+
   const field = event.target.dataset.field;
   if (field === 'kindFilter' || field === 'statusFilter') {
     actions.setUI({ [field]: event.target.value });
