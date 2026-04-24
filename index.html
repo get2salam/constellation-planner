@@ -21,14 +21,14 @@
         <div></div>
         <div class="toolbar">
           <button class="btn">Export</button>
-          <button class="btn btn-primary">New star</button>
+          <button class="btn btn-primary" data-action="new-star">New star</button>
         </div>
       </header>
 
       <section class="hero">
         <article class="hero-copy card">
-          <h2>Turn your strategy into a navigable sky.</h2>
-          <p>
+          <h2 data-role="map-title">Turn your strategy into a navigable sky.</h2>
+          <p data-role="map-note">
             Plot initiatives as stars, connect dependencies as routes, and see
             where your strongest bets cluster around the mission.
           </p>
@@ -37,19 +37,19 @@
           <h3>At a glance</h3>
           <div class="summary-grid">
             <div class="stat">
-              <strong>0</strong>
+              <strong data-role="stars-count">0</strong>
               <span>stars</span>
             </div>
             <div class="stat">
-              <strong>0</strong>
+              <strong data-role="links-count">0</strong>
               <span>links</span>
             </div>
             <div class="stat">
-              <strong>0</strong>
+              <strong data-role="active-bets">0</strong>
               <span>active bets</span>
             </div>
             <div class="stat">
-              <strong>—</strong>
+              <strong data-role="top-priority">—</strong>
               <span>top priority</span>
             </div>
           </div>
@@ -57,19 +57,10 @@
       </section>
 
       <section class="workspace">
-        <article class="panel card placeholder">
-          <div>
-            <strong>Constellation canvas</strong>
-            <p>The interactive star map lands in the next commit.</p>
-          </div>
-        </article>
-        <article class="panel card placeholder">
-          <div>
-            <strong>Mission ledger</strong>
-            <p>Stars, filters, and insights will appear here.</p>
-          </div>
-        </article>
+        <article class="panel card placeholder" data-role="canvas"></article>
+        <article class="panel card placeholder" data-role="ledger"></article>
       </section>
     </main>
+    <script type="module" src="./js/main.js"></script>
   </body>
 </html>
