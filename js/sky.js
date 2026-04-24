@@ -30,8 +30,9 @@ export function renderConstellation(state, visibleStars) {
       const angle = Math.atan2(dy, dx) * (180 / Math.PI);
       const midX = (from.x + to.x) / 2;
       const midY = (from.y + to.y) / 2;
+      const selected = state.ui.selectedId && (state.ui.selectedId === from.id || state.ui.selectedId === to.id);
       return `
-        <div class="route" style="left:${from.x}%;top:${from.y}%;width:${length}%;transform:rotate(${angle}deg)"></div>
+        <div class="route ${selected ? "is-selected" : ""}" style="left:${from.x}%;top:${from.y}%;width:${length}%;transform:rotate(${angle}deg)"></div>
         <span class="route-label" style="left:${midX}%;top:${midY}%">${link.label}</span>
       `;
     })

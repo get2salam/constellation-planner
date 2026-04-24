@@ -80,6 +80,16 @@ export const actions = {
     const star = normalizeStar(input);
     commit({ ...state, stars: [...state.stars, star], ui: { ...state.ui, selectedId: star.id } });
   },
+  addLink(input = {}) {
+    const link = normalizeLink(input);
+    if (!link.from || !link.to || link.from === link.to) return;
+    const exists = state.links.some((entry) => entry.from === link.from && entry.to === link.to && entry.label === link.label);
+    if (exists) return;
+    commit({ ...state, links: [...state.links, link] });
+  },
+  removeLink(id) {
+    commit({ ...state, links: state.links.filter((link) => link.id !== id) });
+  },
   updateStar(id, patch = {}) {
     commit({
       ...state,

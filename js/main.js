@@ -12,7 +12,9 @@ const topPriorityEl = document.querySelector("[data-role='top-priority']");
 const canvasEl = document.querySelector("[data-role='canvas']");
 const ledgerEl = document.querySelector("[data-role='ledger']");
 
-function renderInspector(star) {
+function renderInspector(star, state) {
+  const relatedLinks = state.links.filter((link) => link.from === star.id || link.to === star.id);
+  const targets = state.stars.filter((entry) => entry.id !== star.id);
   return `
     <section class="inspector">
       <div class="ledger-head">
@@ -49,6 +51,26 @@ function renderInspector(star) {
         <label class="field"><span>Confidence</span><input type="range" min="1" max="10" value="${star.confidence}" data-field="confidence" data-star-id="${star.id}" /></label>
       </div>
       <label class="field"><span>Effort</span><input type="range" min="1" max="10" value="${star.effort}" data-field="effort" data-star-id="${star.id}" /></label>
+      <div class="field-grid two">
+        <label class="field">
+          <span>Link to another star</span>
+          <select data-role="link-target">
+            <option value="">Choose target…</option>
+            ${targets.map((target) => `<option value="${target.id}">${target.title}</option>`).join("")}
+          </select>
+        </label>
+        <label class="field">
+          <span>Relationship label</span>
+          <input type="text" data-role="link-label" value="supports" />
+        </label>
+      </div>
+      <button class="btn" type="button" data-action="add-link" data-star-id="${star.id}">Add dependency link</button>
+      <div class="link-list">
+        ${relatedLinks.length ? relatedLinks.map((link) => {
+          const peer = state.stars.find((entry) => entry.id === (link.from === star.id ? link.to : link.from));
+          return `<div class="link-pill"><span>${link.label} · ${peer?.title || "Unknown"}</span><button type="button" data-action="remove-link" data-link-id="${link.id}">✕</button></div>`;
+        }).join("") : `<span class="chip">No links yet</span>`}
+      </div>
     </section>
   `;
 }
@@ -84,7 +106,7 @@ function renderLedger(state, visibleStars) {
       <ul class="ledger-list">
         ${rows}
       </ul>
-      ${selected ? renderInspector(selected) : ""}
+      ${selected ? renderInspector(selected, state) : ""}
     </div>
   `;
 }
@@ -119,6 +141,24 @@ document.addEventListener("click", (event) => {
 
 document.querySelector("[data-action='new-star']")?.addEventListener("click", () => {
   actions.addStar({ title: "New star", note: "Define why this matters." });
+});
+
+document.addEventListener("click", (event) => {
+  const addLinkButton = event.target.closest("[data-action='add-link']");
+  if (addLinkButton) {
+    const starId = addLinkButton.dataset.starId;
+    const inspector = addLinkButton.closest('.inspector');
+    const targetId = inspector?.querySelector('[data-role="link-target"]')?.value;
+    const label = inspector?.querySelector('[data-role="link-label"]')?.value || 'supports';
+    if (starId && targetId) actions.addLink({ from: starId, to: targetId, label });
+    return;
+  }
+
+  const removeLinkButton = event.target.closest("[data-action='remove-link']");
+  if (removeLinkButton) {
+    actions.removeLink(removeLinkButton.dataset.linkId);
+    return;
+  }
 });
 
 document.addEventListener("input", (event) => {
