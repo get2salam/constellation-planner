@@ -80,6 +80,22 @@ export const actions = {
     const star = normalizeStar(input);
     commit({ ...state, stars: [...state.stars, star], ui: { ...state.ui, selectedId: star.id } });
   },
+  updateStar(id, patch = {}) {
+    commit({
+      ...state,
+      stars: state.stars.map((star) =>
+        star.id === id ? normalizeStar({ ...star, ...patch, id }) : star
+      ),
+    });
+  },
+  removeStar(id) {
+    commit({
+      ...state,
+      stars: state.stars.filter((star) => star.id !== id),
+      links: state.links.filter((link) => link.from !== id && link.to !== id),
+      ui: { ...state.ui, selectedId: state.ui.selectedId === id ? null : state.ui.selectedId },
+    });
+  },
 };
 
 export function selectVisibleStars(input = state) {

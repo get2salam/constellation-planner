@@ -1,5 +1,5 @@
-import { KIND_META, STATUS_META, priorityScore } from "./model.js";
-import { actions, initStore, selectStats, selectVisibleStars, subscribe } from "./store.js";
+import { KIND_META, KINDS, STATUSES, STATUS_META, priorityScore } from "./model.js";
+import { actions, getState, initStore, selectStats, selectVisibleStars, subscribe } from "./store.js";
 import { seedConstellation } from "./seeds.js";
 import { renderConstellation } from "./sky.js";
 
@@ -11,6 +11,47 @@ const activeBetsEl = document.querySelector("[data-role='active-bets']");
 const topPriorityEl = document.querySelector("[data-role='top-priority']");
 const canvasEl = document.querySelector("[data-role='canvas']");
 const ledgerEl = document.querySelector("[data-role='ledger']");
+
+function renderInspector(star) {
+  return `
+    <section class="inspector">
+      <div class="ledger-head">
+        <div>
+          <strong>Star inspector</strong>
+          <p>Edit the selected initiative in place.</p>
+        </div>
+        <button class="btn btn-danger" type="button" data-action="remove-star" data-star-id="${star.id}">Remove</button>
+      </div>
+      <label class="field">
+        <span>Title</span>
+        <input type="text" value="${star.title.replaceAll('"', '&quot;')}" data-field="title" data-star-id="${star.id}" />
+      </label>
+      <label class="field">
+        <span>Note</span>
+        <textarea data-field="note" data-star-id="${star.id}">${star.note}</textarea>
+      </label>
+      <div class="field-grid two">
+        <label class="field">
+          <span>Kind</span>
+          <select data-field="kind" data-star-id="${star.id}">
+            ${KINDS.map((kind) => `<option value="${kind}" ${star.kind === kind ? "selected" : ""}>${KIND_META[kind].label}</option>`).join("")}
+          </select>
+        </label>
+        <label class="field">
+          <span>Status</span>
+          <select data-field="status" data-star-id="${star.id}">
+            ${STATUSES.map((status) => `<option value="${status}" ${star.status === status ? "selected" : ""}>${STATUS_META[status].label}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+      <div class="field-grid two">
+        <label class="field"><span>Impact</span><input type="range" min="1" max="10" value="${star.impact}" data-field="impact" data-star-id="${star.id}" /></label>
+        <label class="field"><span>Confidence</span><input type="range" min="1" max="10" value="${star.confidence}" data-field="confidence" data-star-id="${star.id}" /></label>
+      </div>
+      <label class="field"><span>Effort</span><input type="range" min="1" max="10" value="${star.effort}" data-field="effort" data-star-id="${star.id}" /></label>
+    </section>
+  `;
+}
 
 function renderLedger(state, visibleStars) {
   const rows = visibleStars
@@ -31,6 +72,7 @@ function renderLedger(state, visibleStars) {
     `)
     .join("");
 
+  const selected = state.stars.find((star) => star.id === state.ui.selectedId) || visibleStars[0];
   return `
     <div class="stack">
       <div class="ledger-head">
@@ -42,6 +84,7 @@ function renderLedger(state, visibleStars) {
       <ul class="ledger-list">
         ${rows}
       </ul>
+      ${selected ? renderInspector(selected) : ""}
     </div>
   `;
 }
@@ -78,5 +121,24 @@ document.querySelector("[data-action='new-star']")?.addEventListener("click", ()
   actions.addStar({ title: "New star", note: "Define why this matters." });
 });
 
-subscribe(render);
+document.addEventListener("input", (event) => {
+  const starId = event.target.dataset.starId;
+  const field = event.target.dataset.field;
+  if (!starId || !field) return;
+  actions.updateStar(starId, { [field]: event.target.value });
+});
+
+document.addEventListener("click", (event) => {
+  const removeButton = event.target.closest("[data-action='remove-star']");
+  if (!removeButton) return;
+  actions.removeStar(removeButton.dataset.starId);
+});
+
+subscribe((state) => {
+  if (!state.ui.selectedId && state.stars.length) {
+    const first = getState().stars[0];
+    if (first) actions.setUI({ selectedId: first.id });
+  }
+  render(state);
+});
 initStore({ seed: seedConstellation });
