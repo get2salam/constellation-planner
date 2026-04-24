@@ -161,7 +161,9 @@ function render(state) {
   searchEl.value = state.ui.search;
   kindFilterEl.innerHTML = `<option value="all">All kinds</option>${KINDS.map((kind) => `<option value="${kind}" ${state.ui.kindFilter === kind ? "selected" : ""}>${KIND_META[kind].label}</option>`).join("")}`;
   statusFilterEl.innerHTML = `<option value="all">All stages</option>${STATUSES.map((status) => `<option value="${status}" ${state.ui.statusFilter === status ? "selected" : ""}>${STATUS_META[status].label}</option>`).join("")}`;
-  canvasEl.innerHTML = state.ui.view === 'roadmap' ? renderRoadmap(visibleStars) : renderConstellation(state, visibleStars);
+  canvasEl.innerHTML = visibleStars.length
+    ? state.ui.view === 'roadmap' ? renderRoadmap(visibleStars) : renderConstellation(state, visibleStars)
+    : `<div><strong>No stars match this view.</strong><p>Try clearing the filters or plant a new star.</p></div>`;
   ledgerEl.innerHTML = visibleStars.length
     ? renderLedger(state, visibleStars)
     : `
@@ -188,6 +190,16 @@ document.querySelector("[data-action='new-star']")?.addEventListener("click", ()
 
 document.querySelectorAll("[data-action='set-view']").forEach((button) => {
   button.addEventListener('click', () => actions.setUI({ view: button.dataset.view }));
+});
+
+document.querySelector("[data-action='reset-sample']")?.addEventListener('click', () => {
+  actions.replaceAll(seedConstellation());
+  showToast('Replanted the sample constellation.', 'success');
+});
+
+document.querySelector("[data-action='clear-map']")?.addEventListener('click', () => {
+  actions.replaceAll({ mapTitle: 'Fresh constellation', mapNote: 'A blank sky waiting for a new strategy.' });
+  showToast('Cleared the current map.', 'success');
 });
 
 document.querySelector("[data-action='export']")?.addEventListener("click", () => {
