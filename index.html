@@ -8,11 +8,68 @@
       name="description"
       content="A local-first strategy map where projects become stars and dependencies become visible paths."
     />
+    <link rel="stylesheet" href="./styles/tokens.css" />
+    <link rel="stylesheet" href="./styles/app.css" />
   </head>
   <body>
-    <main>
-      <h1>Constellation Planner</h1>
-      <p>Loading your strategy map…</p>
+    <main class="shell">
+      <header class="topbar card">
+        <div class="brand">
+          <h1>Constellation Planner</h1>
+          <p>Local-first strategy mapping for ambitious projects.</p>
+        </div>
+        <div></div>
+        <div class="toolbar">
+          <button class="btn">Export</button>
+          <button class="btn btn-primary">New star</button>
+        </div>
+      </header>
+
+      <section class="hero">
+        <article class="hero-copy card">
+          <h2>Turn your strategy into a navigable sky.</h2>
+          <p>
+            Plot initiatives as stars, connect dependencies as routes, and see
+            where your strongest bets cluster around the mission.
+          </p>
+        </article>
+        <aside class="hero-stats card">
+          <h3>At a glance</h3>
+          <div class="summary-grid">
+            <div class="stat">
+              <strong>0</strong>
+              <span>stars</span>
+            </div>
+            <div class="stat">
+              <strong>0</strong>
+              <span>links</span>
+            </div>
+            <div class="stat">
+              <strong>0</strong>
+              <span>active bets</span>
+            </div>
+            <div class="stat">
+              <strong>—</strong>
+              <span>top priority</span>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="workspace">
+        <article class="panel card placeholder">
+          <div>
+            <strong>Constellation canvas</strong>
+            <p>The interactive star map lands in the next commit.</p>
+          </div>
+        </article>
+        <article class="panel card placeholder">
+          <div>
+            <strong>Mission ledger</strong>
+            <p>Stars, filters, and insights will appear here.</p>
+          </div>
+        </article>
+      </section>
     </main>
   </body>
 </html>
