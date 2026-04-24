@@ -1,5 +1,5 @@
 import { KIND_META, KINDS, STATUSES, STATUS_META, priorityScore } from "./model.js";
-import { actions, getState, initStore, selectStats, selectVisibleStars, subscribe } from "./store.js";
+import { actions, getState, initStore, selectRankedStars, selectStats, selectVisibleStars, subscribe } from "./store.js";
 import { seedConstellation } from "./seeds.js";
 import { renderConstellation } from "./sky.js";
 
@@ -14,6 +14,7 @@ const ledgerEl = document.querySelector("[data-role='ledger']");
 const searchEl = document.querySelector("[data-field='search']");
 const kindFilterEl = document.querySelector("[data-field='kindFilter']");
 const statusFilterEl = document.querySelector("[data-field='statusFilter']");
+const insightsEl = document.querySelector("[data-role='insights']");
 
 function renderInspector(star, state) {
   const relatedLinks = state.links.filter((link) => link.from === star.id || link.to === star.id);
@@ -114,6 +115,36 @@ function renderLedger(state, visibleStars) {
   `;
 }
 
+function renderInsights(state) {
+  const ranked = selectRankedStars(state);
+  const fastestWin = [...state.stars].sort((a, b) => a.effort - b.effort || priorityScore(b) - priorityScore(a))[0];
+  const launchReady = state.stars.find((star) => star.status === 'launch') || ranked[0];
+  const cards = [
+    {
+      title: ranked[0]?.title || 'No stars yet',
+      body: ranked[0] ? `Highest leverage score at ${priorityScore(ranked[0])}.` : 'Add a few initiatives to surface strategic leaders.',
+      meta: 'Top priority',
+    },
+    {
+      title: fastestWin?.title || 'No quick win yet',
+      body: fastestWin ? `Lowest effort star with effort ${fastestWin.effort}/10.` : 'Quick wins appear once the map has stars.',
+      meta: 'Fastest win',
+    },
+    {
+      title: launchReady?.title || 'Nothing launched yet',
+      body: launchReady ? `${STATUS_META[launchReady.status].label} status, ready for execution focus.` : 'Promote a star to Launch when it is execution-ready.',
+      meta: 'Execution anchor',
+    },
+  ];
+  insightsEl.innerHTML = cards.map((card) => `
+    <article class="insight card">
+      <small>${card.meta}</small>
+      <strong>${card.title}</strong>
+      <p>${card.body}</p>
+    </article>
+  `).join('');
+}
+
 function render(state) {
   const stats = selectStats(state);
   const visibleStars = selectVisibleStars(state);
@@ -136,6 +167,7 @@ function render(state) {
         <p>${visibleStars.length} visible stars on the sky map.</p>
       </div>
     `;
+  renderInsights(state);
 }
 
 document.addEventListener("click", (event) => {

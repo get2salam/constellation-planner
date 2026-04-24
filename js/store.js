@@ -118,8 +118,12 @@ export function selectVisibleStars(input = state) {
   });
 }
 
+export function selectRankedStars(input = state) {
+  return [...input.stars].sort((a, b) => priorityScore(b) - priorityScore(a) || b.impact - a.impact);
+}
+
 export function selectStats(input = state) {
-  const ranked = [...input.stars].sort((a, b) => priorityScore(b) - priorityScore(a));
+  const ranked = selectRankedStars(input);
   return {
     stars: input.stars.length,
     links: input.links.length,
