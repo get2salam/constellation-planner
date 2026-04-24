@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="./styles/app.css" />
     <link rel="stylesheet" href="./styles/sky.css" />
     <link rel="stylesheet" href="./styles/list.css" />
+    <link rel="stylesheet" href="./styles/controls.css" />
   </head>
   <body>
     <main class="shell">
@@ -56,6 +57,25 @@
             </div>
           </div>
         </aside>
+      </section>
+
+      <section class="controls card">
+        <label class="control search">
+          <span>Search</span>
+          <input type="search" placeholder="Search stars and notes…" data-field="search" />
+        </label>
+        <label class="control">
+          <span>Kind</span>
+          <select data-field="kindFilter">
+            <option value="all">All kinds</option>
+          </select>
+        </label>
+        <label class="control">
+          <span>Status</span>
+          <select data-field="statusFilter">
+            <option value="all">All stages</option>
+          </select>
+        </label>
       </section>
 
       <section class="workspace">

@@ -1,0 +1,35 @@
+.controls {
+  margin-top: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.control {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.control span {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+.control input,
+.control select {
+  min-width: 180px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--surface-edge);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.7rem 0.95rem;
+}
+
+.control.search {
+  flex: 1;
+}
+
+.control.search input {
+  width: 100%;
+}

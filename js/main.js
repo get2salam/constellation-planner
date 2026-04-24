@@ -11,6 +11,9 @@ const activeBetsEl = document.querySelector("[data-role='active-bets']");
 const topPriorityEl = document.querySelector("[data-role='top-priority']");
 const canvasEl = document.querySelector("[data-role='canvas']");
 const ledgerEl = document.querySelector("[data-role='ledger']");
+const searchEl = document.querySelector("[data-field='search']");
+const kindFilterEl = document.querySelector("[data-field='kindFilter']");
+const statusFilterEl = document.querySelector("[data-field='statusFilter']");
 
 function renderInspector(star, state) {
   const relatedLinks = state.links.filter((link) => link.from === star.id || link.to === star.id);
@@ -120,6 +123,9 @@ function render(state) {
   linksEl.textContent = String(stats.links);
   activeBetsEl.textContent = String(stats.activeBets);
   topPriorityEl.textContent = stats.topPriority;
+  searchEl.value = state.ui.search;
+  kindFilterEl.innerHTML = `<option value="all">All kinds</option>${KINDS.map((kind) => `<option value="${kind}" ${state.ui.kindFilter === kind ? "selected" : ""}>${KIND_META[kind].label}</option>`).join("")}`;
+  statusFilterEl.innerHTML = `<option value="all">All stages</option>${STATUSES.map((status) => `<option value="${status}" ${state.ui.statusFilter === status ? "selected" : ""}>${STATUS_META[status].label}</option>`).join("")}`;
   canvasEl.innerHTML = renderConstellation(state, visibleStars);
   ledgerEl.innerHTML = visibleStars.length
     ? renderLedger(state, visibleStars)
@@ -164,8 +170,19 @@ document.addEventListener("click", (event) => {
 document.addEventListener("input", (event) => {
   const starId = event.target.dataset.starId;
   const field = event.target.dataset.field;
+  if (field === 'search') {
+    actions.setUI({ search: event.target.value });
+    return;
+  }
   if (!starId || !field) return;
   actions.updateStar(starId, { [field]: event.target.value });
+});
+
+document.addEventListener("change", (event) => {
+  const field = event.target.dataset.field;
+  if (field === 'kindFilter' || field === 'statusFilter') {
+    actions.setUI({ [field]: event.target.value });
+  }
 });
 
 document.addEventListener("click", (event) => {
