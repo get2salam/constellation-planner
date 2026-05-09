@@ -1,4 +1,4 @@
-import { KIND_META, STATUS_META } from "./model.js";
+import { escapeHtml, KIND_META, STATUS_META } from "./model.js";
 
 export function renderConstellation(state, visibleStars) {
   const byId = new Map(state.stars.map((star) => [star.id, star]));
@@ -16,7 +16,7 @@ export function renderConstellation(state, visibleStars) {
         <button class="star-node" type="button" data-star-id="${star.id}" style="left:${star.x}%;top:${star.y}%">
           <span class="star-glow" style="background:${glow};width:${radius * 3}px;height:${radius * 3}px"></span>
           <span class="star-core" style="background:${glow};width:${radius}px;height:${radius}px;box-shadow:0 0 0 2px ${ring}"></span>
-          <span class="star-label">${star.title}</span>
+          <span class="star-label">${escapeHtml(star.title)}</span>
         </button>
       `;
     })
@@ -33,7 +33,7 @@ export function renderConstellation(state, visibleStars) {
       const selected = state.ui.selectedId && (state.ui.selectedId === from.id || state.ui.selectedId === to.id);
       return `
         <div class="route ${selected ? "is-selected" : ""}" style="left:${from.x}%;top:${from.y}%;width:${length}%;transform:rotate(${angle}deg)"></div>
-        <span class="route-label" style="left:${midX}%;top:${midY}%">${link.label}</span>
+        <span class="route-label" style="left:${midX}%;top:${midY}%">${escapeHtml(link.label)}</span>
       `;
     })
     .join("");

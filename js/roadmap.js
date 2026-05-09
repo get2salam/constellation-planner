@@ -1,4 +1,4 @@
-import { STATUS_META } from "./model.js";
+import { escapeHtml, STATUS_META } from "./model.js";
 
 export function renderRoadmap(stars) {
   const lanes = ["spark", "orbit", "cluster", "launch"];
@@ -13,8 +13,8 @@ export function renderRoadmap(stars) {
           <div class="roadmap-stack">
             ${stars.filter((star) => star.status === lane).map((star) => `
               <button class="roadmap-card" type="button" data-star-id="${star.id}">
-                <strong>${star.title}</strong>
-                <p>${star.note || 'No notes yet.'}</p>
+                <strong>${escapeHtml(star.title)}</strong>
+                <p>${star.note ? escapeHtml(star.note) : 'No notes yet.'}</p>
               </button>
             `).join("") || `<div class="roadmap-empty">Nothing here yet.</div>`}
           </div>

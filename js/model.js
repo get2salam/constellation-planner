@@ -21,6 +21,15 @@ export function uid(prefix) {
   return `${prefix}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+export function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 export function priorityScore(star) {
   return Math.round((star.impact * star.confidence - star.effort * 0.6) * 10) / 10;
 }

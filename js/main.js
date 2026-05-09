@@ -1,6 +1,6 @@
 import { showToast } from "./feedback.js";
 import { exportConstellation, importConstellation } from "./io.js";
-import { KIND_META, KINDS, STATUSES, STATUS_META, priorityScore } from "./model.js";
+import { escapeHtml, KIND_META, KINDS, STATUSES, STATUS_META, priorityScore } from "./model.js";
 import { mountShortcuts } from "./shortcuts.js";
 import { actions, getState, initStore, selectRankedStars, selectStats, selectVisibleStars, subscribe } from "./store.js";
 import { seedConstellation } from "./seeds.js";
@@ -34,11 +34,11 @@ function renderInspector(star, state) {
       </div>
       <label class="field">
         <span>Title</span>
-        <input type="text" value="${star.title.replaceAll('"', '&quot;')}" data-field="title" data-star-id="${star.id}" />
+        <input type="text" value="${escapeHtml(star.title)}" data-field="title" data-star-id="${star.id}" />
       </label>
       <label class="field">
         <span>Note</span>
-        <textarea data-field="note" data-star-id="${star.id}">${star.note}</textarea>
+        <textarea data-field="note" data-star-id="${star.id}">${escapeHtml(star.note)}</textarea>
       </label>
       <div class="field-grid two">
         <label class="field">
@@ -64,7 +64,7 @@ function renderInspector(star, state) {
           <span>Link to another star</span>
           <select data-role="link-target">
             <option value="">Choose target…</option>
-            ${targets.map((target) => `<option value="${target.id}">${target.title}</option>`).join("")}
+            ${targets.map((target) => `<option value="${target.id}">${escapeHtml(target.title)}</option>`).join("")}
           </select>
         </label>
         <label class="field">
@@ -76,7 +76,7 @@ function renderInspector(star, state) {
       <div class="link-list">
         ${relatedLinks.length ? relatedLinks.map((link) => {
           const peer = state.stars.find((entry) => entry.id === (link.from === star.id ? link.to : link.from));
-          return `<div class="link-pill"><span>${link.label} · ${peer?.title || "Unknown"}</span><button type="button" data-action="remove-link" data-link-id="${link.id}">✕</button></div>`;
+          return `<div class="link-pill"><span>${escapeHtml(link.label)} · ${escapeHtml(peer?.title || "Unknown")}</span><button type="button" data-action="remove-link" data-link-id="${link.id}">✕</button></div>`;
         }).join("") : `<span class="chip">No links yet</span>`}
       </div>
     </section>
@@ -88,7 +88,7 @@ function renderLedger(state, visibleStars) {
     .map((star) => `
       <li class="ledger-item ${state.ui.selectedId === star.id ? "is-selected" : ""}" data-action="select-star" data-star-id="${star.id}">
         <div class="ledger-row">
-          <strong>${star.title}</strong>
+          <strong>${escapeHtml(star.title)}</strong>
           <span class="priority">Priority ${priorityScore(star)}</span>
         </div>
         <div class="chips">
@@ -97,7 +97,7 @@ function renderLedger(state, visibleStars) {
           <span class="chip">Impact ${star.impact}</span>
           <span class="chip">Confidence ${star.confidence}</span>
         </div>
-        <p>${star.note || "No notes yet."}</p>
+        <p>${star.note ? escapeHtml(star.note) : "No notes yet."}</p>
       </li>
     `)
     .join("");
@@ -143,8 +143,8 @@ function renderInsights(state) {
   insightsEl.innerHTML = cards.map((card) => `
     <article class="insight card">
       <small>${card.meta}</small>
-      <strong>${card.title}</strong>
-      <p>${card.body}</p>
+      <strong>${escapeHtml(card.title)}</strong>
+      <p>${escapeHtml(card.body)}</p>
     </article>
   `).join('');
 }
