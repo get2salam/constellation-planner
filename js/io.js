@@ -19,9 +19,23 @@ export function exportConstellation() {
 
 export async function importConstellation(file) {
   const text = await file.text();
-  const parsed = JSON.parse(text);
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error("That file is not valid JSON.");
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("That backup is missing its constellation data.");
+  }
   if (parsed.schema !== SCHEMA) {
     throw new Error("That file is not a Constellation Planner backup.");
+  }
+  if (parsed.stars !== undefined && !Array.isArray(parsed.stars)) {
+    throw new Error("That backup has a malformed stars list.");
+  }
+  if (parsed.links !== undefined && !Array.isArray(parsed.links)) {
+    throw new Error("That backup has a malformed links list.");
   }
   actions.replaceAll(parsed);
 }
