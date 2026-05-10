@@ -97,6 +97,14 @@ constellation-planner/
     preview.svg
 ```
 
+## Testing
+
+The pure model helpers have a small Node-based test suite that uses the built-in test runner (no dependencies required):
+
+```bash
+npm test
+```
+
 ## Privacy
 
 Everything stays in your browser unless you explicitly export a backup. Constellation Planner never makes a network request.
