@@ -17,8 +17,7 @@ export function exportConstellation() {
   URL.revokeObjectURL(url);
 }
 
-export async function importConstellation(file) {
-  const text = await file.text();
+export function parseBackup(text) {
   let parsed;
   try {
     parsed = JSON.parse(text);
@@ -37,5 +36,10 @@ export async function importConstellation(file) {
   if (parsed.links !== undefined && !Array.isArray(parsed.links)) {
     throw new Error("That backup has a malformed links list.");
   }
-  actions.replaceAll(parsed);
+  return parsed;
+}
+
+export async function importConstellation(file) {
+  const text = await file.text();
+  actions.replaceAll(parseBackup(text));
 }
