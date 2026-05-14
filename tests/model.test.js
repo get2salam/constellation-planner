@@ -26,8 +26,19 @@ test("normalizeStar clamps numeric fields and falls back to safe defaults", () =
   assert.match(star.id, /^star_/);
 });
 
+test("normalizeStar falls back to a placeholder title when the input is blank or non-string", () => {
+  assert.equal(normalizeStar({ title: "   " }).title, "Untitled star");
+  assert.equal(normalizeStar({ title: 42 }).title, "Untitled star");
+  assert.equal(normalizeStar({}).title, "Untitled star");
+});
+
 test("normalizeLink trims labels and assigns a generated id", () => {
   const link = normalizeLink({ from: "a", to: "b", label: "  guides  " });
   assert.equal(link.label, "guides");
   assert.match(link.id, /^link_/);
+});
+
+test("normalizeLink falls back to the default label when the input is blank or non-string", () => {
+  assert.equal(normalizeLink({ from: "a", to: "b", label: "   " }).label, "supports");
+  assert.equal(normalizeLink({ from: "a", to: "b", label: null }).label, "supports");
 });

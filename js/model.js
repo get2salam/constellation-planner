@@ -34,13 +34,18 @@ export function priorityScore(star) {
   return Math.round((star.impact * star.confidence - star.effort * 0.6) * 10) / 10;
 }
 
+function trimmedOr(value, fallback) {
+  const raw = typeof value === "string" ? value.trim() : "";
+  return raw || fallback;
+}
+
 export function normalizeStar(input = {}) {
   const kind = KINDS.includes(input.kind) ? input.kind : "bet";
   const status = STATUSES.includes(input.status) ? input.status : "spark";
   return {
     id: input.id || uid("star"),
-    title: (input.title || "Untitled star").trim(),
-    note: input.note || "",
+    title: trimmedOr(input.title, "Untitled star"),
+    note: typeof input.note === "string" ? input.note : "",
     kind,
     status,
     impact: Math.max(1, Math.min(10, Number(input.impact) || 5)),
@@ -56,7 +61,7 @@ export function normalizeLink(input = {}) {
     id: input.id || uid("link"),
     from: input.from || "",
     to: input.to || "",
-    label: (input.label || "supports").trim(),
+    label: trimmedOr(input.label, "supports"),
   };
 }
 
