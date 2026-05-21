@@ -2,17 +2,22 @@ import { actions, getState } from "./store.js";
 
 export const SCHEMA = "constellation-planner/v1";
 
-export function exportConstellation() {
-  const payload = {
+export function buildBackupPayload(state, now = new Date()) {
+  return {
     schema: SCHEMA,
-    exportedAt: new Date().toISOString(),
-    ...getState(),
+    exportedAt: now.toISOString(),
+    ...state,
   };
+}
+
+export function exportConstellation() {
+  const now = new Date();
+  const payload = buildBackupPayload(getState(), now);
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `constellation-planner-${new Date().toISOString().slice(0, 10)}.json`;
+  link.download = `constellation-planner-${now.toISOString().slice(0, 10)}.json`;
   link.click();
   URL.revokeObjectURL(url);
 }
