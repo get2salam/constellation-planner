@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { planExecutionOrder, nextActions, constellationHealth, auditDependencyPlan, buildExecutionReport } from "../js/agent.js";
+import { planExecutionOrder, nextActions, blockedActions, constellationHealth, auditDependencyPlan, buildExecutionReport } from "../js/agent.js";
 import { normalizeStar, normalizeLink } from "../js/model.js";
 
 const s = (id, overrides = {}) =>
@@ -69,6 +69,54 @@ test("nextActions ranks results by priority score descending", () => {
   const pricey = s("pricey", { impact: 9, effort: 1, status: "spark" });
   const actions = nextActions([cheap, pricey], []);
   assert.equal(actions[0].id, "pricey");
+});
+
+// blockedActions ------------------------------------------------------------
+
+test("blockedActions returns stars whose prerequisites are not yet launched", () => {
+  const a = s("a", { status: "orbit" });
+  const b = s("b", { status: "spark" });
+  const blocked = blockedActions([a, b], [l("a", "b")]);
+  assert.equal(blocked.length, 1);
+  assert.equal(blocked[0].star.id, "b");
+  assert.deepEqual(blocked[0].pending, ["a"]);
+});
+
+test("blockedActions excludes stars with no prerequisites", () => {
+  const a = s("a", { status: "spark" });
+  assert.equal(blockedActions([a], []).length, 0);
+});
+
+test("blockedActions excludes stars whose prerequisites are all launched", () => {
+  const a = s("a", { status: "launch" });
+  const b = s("b", { status: "spark" });
+  assert.equal(blockedActions([a, b], [l("a", "b")]).length, 0);
+});
+
+test("blockedActions excludes launched stars even if their prerequisites are not launched", () => {
+  const a = s("a", { status: "orbit" });
+  const b = s("b", { status: "launch" });
+  assert.equal(blockedActions([a, b], [l("a", "b")]).length, 0);
+});
+
+test("blockedActions reports multiple pending prerequisites for one star", () => {
+  const a = s("a", { status: "orbit" });
+  const b = s("b", { status: "launch" });
+  const c = s("c", { status: "spark" });
+  const blocked = blockedActions([a, b, c], [l("a", "c"), l("b", "c")]);
+  assert.equal(blocked.length, 1);
+  assert.deepEqual(blocked[0].pending, ["a"]);
+});
+
+test("blockedActions ranks results by priority score descending", () => {
+  const dep = s("dep", { status: "orbit" });
+  const low = s("low", { impact: 1, effort: 9, status: "spark" });
+  const high = s("high", { impact: 9, effort: 1, status: "spark" });
+  const blocked = blockedActions(
+    [dep, low, high],
+    [l("dep", "low"), l("dep", "high")],
+  );
+  assert.equal(blocked[0].star.id, "high");
 });
 
 // constellationHealth -------------------------------------------------------

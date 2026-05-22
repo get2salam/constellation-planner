@@ -66,6 +66,31 @@ export function nextActions(stars, links, limit = 3) {
 }
 
 /**
+ * Returns stars that are blocked: not yet launched but with one or more
+ * prerequisite stars that have not been launched yet. Each entry includes the
+ * list of pending prerequisite IDs so dashboards can surface *why* a star
+ * cannot start. Sorted by priority score descending so the most impactful
+ * blocked work surfaces first.
+ */
+export function blockedActions(stars, links) {
+  const byId = new Map(stars.map((s) => [s.id, s]));
+  const prereqs = new Map(stars.map((s) => [s.id, []]));
+  for (const { from, to } of links) {
+    if (prereqs.has(to) && byId.has(from)) prereqs.get(to).push(from);
+  }
+
+  const blocked = [];
+  for (const star of stars) {
+    if (star.status === "launch") continue;
+    const pending = prereqs
+      .get(star.id)
+      .filter((id) => byId.get(id).status !== "launch");
+    if (pending.length) blocked.push({ star, pending });
+  }
+  return blocked.sort((a, b) => priorityScore(b.star) - priorityScore(a.star));
+}
+
+/**
  * Returns a health snapshot of the constellation suitable for agent status
  * checks, dashboards, or automated evaluation loops.
  */
