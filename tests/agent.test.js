@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { planExecutionOrder, nextActions, constellationHealth } from "../js/agent.js";
+import { planExecutionOrder, nextActions, constellationHealth, auditDependencyPlan } from "../js/agent.js";
 import { normalizeStar, normalizeLink } from "../js/model.js";
 
 const s = (id, overrides = {}) =>
@@ -101,4 +101,60 @@ test("constellationHealth computes average priority score", () => {
   ];
   const h = constellationHealth(stars);
   assert.ok(h.avgScore > 0, "average score should be positive");
+});
+
+// auditDependencyPlan -------------------------------------------------------
+
+test("auditDependencyPlan detects broken links (from nonexistent stars)", () => {
+  const stars = [s("a"), s("b")];
+  const links = [l("a", "b"), l("x", "b")]; // "x" doesn't exist
+  const audit = auditDependencyPlan(stars, links);
+  assert.equal(audit.brokenLinks.length, 1);
+  assert.ok(audit.brokenLinks[0].includes("x"));
+});
+
+test("auditDependencyPlan detects broken links (to nonexistent stars)", () => {
+  const stars = [s("a"), s("b")];
+  const links = [l("a", "b"), l("a", "z")]; // "z" doesn't exist
+  const audit = auditDependencyPlan(stars, links);
+  assert.equal(audit.brokenLinks.length, 1);
+  assert.ok(audit.brokenLinks[0].includes("z"));
+});
+
+test("auditDependencyPlan detects simple cycles", () => {
+  const stars = [s("a"), s("b")];
+  const links = [l("a", "b"), l("b", "a")]; // cycle: a ↔ b
+  const audit = auditDependencyPlan(stars, links);
+  assert.ok(audit.cycles.length > 0);
+});
+
+test("auditDependencyPlan detects three-star cycles", () => {
+  const stars = [s("a"), s("b"), s("c")];
+  const links = [l("a", "b"), l("b", "c"), l("c", "a")]; // cycle: a → b → c → a
+  const audit = auditDependencyPlan(stars, links);
+  assert.ok(audit.cycles.length > 0);
+});
+
+test("auditDependencyPlan identifies isolated stars (no links)", () => {
+  const stars = [s("a"), s("b"), s("lonely")];
+  const links = [l("a", "b")]; // "lonely" has no connections
+  const audit = auditDependencyPlan(stars, links);
+  assert.equal(audit.isolated.length, 1);
+  assert.equal(audit.isolated[0], "lonely");
+});
+
+test("auditDependencyPlan returns clean audit for valid plan", () => {
+  const stars = [s("a"), s("b"), s("c")];
+  const links = [l("a", "b"), l("b", "c")]; // no cycles, no broken links, no isolated
+  const audit = auditDependencyPlan(stars, links);
+  assert.equal(audit.brokenLinks.length, 0);
+  assert.equal(audit.cycles.length, 0);
+  assert.equal(audit.isolated.length, 0);
+});
+
+test("auditDependencyPlan handles empty constellation", () => {
+  const audit = auditDependencyPlan([], []);
+  assert.equal(audit.brokenLinks.length, 0);
+  assert.equal(audit.cycles.length, 0);
+  assert.equal(audit.isolated.length, 0);
 });

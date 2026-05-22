@@ -84,3 +84,63 @@ export function constellationHealth(stars) {
 
   return { byStatus, avgScore, completionRate, total };
 }
+
+/**
+ * Audits a dependency plan for safety issues: broken links, circular
+ * dependencies, and isolated components. Returns an object with issues
+ * categorized by severity for orchestration auditing.
+ */
+export function auditDependencyPlan(stars, links) {
+  const starIds = new Set(stars.map((s) => s.id));
+  const issues = {
+    brokenLinks: [],
+    cycles: [],
+    isolated: [],
+  };
+
+  // Check for broken links (referencing non-existent stars).
+  for (const { from, to } of links) {
+    if (!starIds.has(from)) issues.brokenLinks.push(`link from nonexistent star "${from}"`);
+    if (!starIds.has(to)) issues.brokenLinks.push(`link to nonexistent star "${to}"`);
+  }
+
+  // Detect cycles using DFS.
+  const adj = new Map(stars.map((s) => [s.id, []]));
+  for (const { from, to } of links) {
+    if (starIds.has(from) && starIds.has(to)) {
+      adj.get(from).push(to);
+    }
+  }
+
+  const visited = new Set();
+  const recStack = new Set();
+
+  const dfs = (id) => {
+    visited.add(id);
+    recStack.add(id);
+    for (const neighbor of adj.get(id)) {
+      if (!visited.has(neighbor)) {
+        dfs(neighbor);
+      } else if (recStack.has(neighbor)) {
+        issues.cycles.push(`cycle detected: ${id} → ${neighbor}`);
+      }
+    }
+    recStack.delete(id);
+  };
+
+  for (const star of stars) {
+    if (!visited.has(star.id)) dfs(star.id);
+  }
+
+  // Find isolated stars (no incoming or outgoing links).
+  const linked = new Set();
+  for (const { from, to } of links) {
+    if (starIds.has(from)) linked.add(from);
+    if (starIds.has(to)) linked.add(to);
+  }
+  for (const star of stars) {
+    if (!linked.has(star.id)) issues.isolated.push(star.id);
+  }
+
+  return issues;
+}
