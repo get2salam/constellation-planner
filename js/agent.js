@@ -144,3 +144,33 @@ export function auditDependencyPlan(stars, links) {
 
   return issues;
 }
+
+/**
+ * Assembles a structured execution report by combining health, audit, ordered
+ * plan, and next actions into one snapshot. Designed for export, dashboards,
+ * and autonomous evaluation loops that need a single consistent view of agent
+ * state at a point in time.
+ *
+ * `issueCount` is a quick safety signal: non-zero means the plan has broken
+ * links or cycles that should be resolved before autonomous execution proceeds.
+ */
+export function buildExecutionReport(stars, links, now = new Date()) {
+  const audit = auditDependencyPlan(stars, links);
+  return {
+    generatedAt: now.toISOString(),
+    health: constellationHealth(stars),
+    issueCount: audit.brokenLinks.length + audit.cycles.length,
+    audit,
+    executionOrder: planExecutionOrder(stars, links).map((s, i) => ({
+      step: i + 1,
+      id: s.id,
+      title: s.title,
+      status: s.status,
+    })),
+    nextActions: nextActions(stars, links).map((s) => ({
+      id: s.id,
+      title: s.title,
+      status: s.status,
+    })),
+  };
+}

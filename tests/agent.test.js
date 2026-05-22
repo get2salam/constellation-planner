@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { planExecutionOrder, nextActions, constellationHealth, auditDependencyPlan } from "../js/agent.js";
+import { planExecutionOrder, nextActions, constellationHealth, auditDependencyPlan, buildExecutionReport } from "../js/agent.js";
 import { normalizeStar, normalizeLink } from "../js/model.js";
 
 const s = (id, overrides = {}) =>
@@ -157,4 +157,71 @@ test("auditDependencyPlan handles empty constellation", () => {
   assert.equal(audit.brokenLinks.length, 0);
   assert.equal(audit.cycles.length, 0);
   assert.equal(audit.isolated.length, 0);
+});
+
+// buildExecutionReport --------------------------------------------------------
+
+test("buildExecutionReport includes a generatedAt ISO timestamp", () => {
+  const now = new Date("2026-05-22T10:00:00.000Z");
+  const report = buildExecutionReport([], [], now);
+  assert.equal(report.generatedAt, "2026-05-22T10:00:00.000Z");
+});
+
+test("buildExecutionReport includes the constellation health snapshot", () => {
+  const stars = [s("a", { status: "launch" }), s("b")];
+  const report = buildExecutionReport(stars, []);
+  assert.equal(report.health.total, 2);
+  assert.equal(report.health.completionRate, 50);
+});
+
+test("buildExecutionReport includes the full audit object", () => {
+  const stars = [s("a"), s("b")];
+  const report = buildExecutionReport(stars, [l("a", "b"), l("x", "b")]);
+  assert.equal(report.audit.brokenLinks.length, 1);
+});
+
+test("buildExecutionReport issueCount sums broken links and cycles", () => {
+  const stars = [s("a"), s("b")];
+  const links = [l("x", "a"), l("a", "b"), l("b", "a")]; // one broken + one cycle
+  const report = buildExecutionReport(stars, links);
+  assert.ok(report.issueCount >= 2);
+});
+
+test("buildExecutionReport issueCount is zero for a clean plan", () => {
+  const stars = [s("a"), s("b"), s("c")];
+  const report = buildExecutionReport(stars, [l("a", "b"), l("b", "c")]);
+  assert.equal(report.issueCount, 0);
+});
+
+test("buildExecutionReport executionOrder assigns consecutive step numbers", () => {
+  const stars = [s("a"), s("b"), s("c")];
+  const report = buildExecutionReport(stars, [l("a", "b"), l("b", "c")]);
+  assert.equal(report.executionOrder[0].step, 1);
+  assert.equal(report.executionOrder[2].step, 3);
+});
+
+test("buildExecutionReport executionOrder entries expose id, title, and status", () => {
+  const stars = [s("x", { title: "Spike auth", status: "orbit" })];
+  const report = buildExecutionReport(stars, []);
+  const entry = report.executionOrder[0];
+  assert.equal(entry.id, "x");
+  assert.equal(entry.title, "Spike auth");
+  assert.equal(entry.status, "orbit");
+});
+
+test("buildExecutionReport nextActions lists only immediately actionable stars", () => {
+  const a = s("a", { status: "launch" });
+  const b = s("b", { status: "spark" });
+  const c = s("c", { status: "spark" }); // blocked: b not yet launched
+  const report = buildExecutionReport([a, b, c], [l("a", "b"), l("b", "c")]);
+  assert.equal(report.nextActions.length, 1);
+  assert.equal(report.nextActions[0].id, "b");
+});
+
+test("buildExecutionReport handles an empty constellation without errors", () => {
+  const report = buildExecutionReport([], [], new Date("2026-01-01T00:00:00.000Z"));
+  assert.equal(report.health.total, 0);
+  assert.equal(report.issueCount, 0);
+  assert.deepEqual(report.executionOrder, []);
+  assert.deepEqual(report.nextActions, []);
 });
