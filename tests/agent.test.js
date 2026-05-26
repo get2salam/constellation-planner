@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { planExecutionOrder, nextActions, blockedActions, criticalPath, constellationHealth, auditDependencyPlan, buildExecutionReport } from "../js/agent.js";
+import { planExecutionOrder, nextActions, blockedActions, criticalPath, executionLayers, constellationHealth, auditDependencyPlan, buildExecutionReport } from "../js/agent.js";
 import { normalizeStar, normalizeLink } from "../js/model.js";
 
 const s = (id, overrides = {}) =>
@@ -156,6 +156,48 @@ test("criticalPath terminates and ignores stars participating in cycles", () => 
   // c ↔ d is a cycle; a → b is a real chain
   const path = criticalPath(stars, [l("a", "b"), l("c", "d"), l("d", "c")]);
   assert.deepEqual(path.map((p) => p.id), ["a", "b"]);
+});
+
+// executionLayers -----------------------------------------------------------
+
+test("executionLayers groups independent stars into a single first wave", () => {
+  const layers = executionLayers([s("a"), s("b"), s("c")], []);
+  assert.equal(layers.length, 1);
+  assert.equal(layers[0].length, 3);
+});
+
+test("executionLayers places each star in the layer after its prerequisite", () => {
+  const stars = [s("a"), s("b"), s("c")];
+  const layers = executionLayers(stars, [l("a", "b"), l("b", "c")]);
+  assert.deepEqual(layers.map((wave) => wave.map((x) => x.id)), [["a"], ["b"], ["c"]]);
+});
+
+test("executionLayers collapses a diamond into three waves", () => {
+  const stars = [s("a"), s("b"), s("c"), s("d")];
+  const layers = executionLayers(stars, [l("a", "b"), l("a", "c"), l("b", "d"), l("c", "d")]);
+  assert.equal(layers.length, 3);
+  assert.deepEqual(layers[1].map((x) => x.id).sort(), ["b", "c"]);
+  assert.equal(layers[2][0].id, "d");
+});
+
+test("executionLayers ranks stars within a layer by priority score descending", () => {
+  const low = s("low", { impact: 1, effort: 9 });
+  const high = s("high", { impact: 9, effort: 1 });
+  const [first] = executionLayers([low, high], []);
+  assert.equal(first[0].id, "high");
+});
+
+test("executionLayers appends cycle participants in a final unresolved layer", () => {
+  const stars = [s("a"), s("b"), s("c")];
+  // a is a clean root; b ↔ c is a cycle
+  const layers = executionLayers(stars, [l("b", "c"), l("c", "b")]);
+  assert.equal(layers[0][0].id, "a");
+  const tail = layers[layers.length - 1].map((x) => x.id).sort();
+  assert.deepEqual(tail, ["b", "c"]);
+});
+
+test("executionLayers returns an empty list for an empty constellation", () => {
+  assert.deepEqual(executionLayers([], []), []);
 });
 
 // constellationHealth -------------------------------------------------------

@@ -145,6 +145,51 @@ export function criticalPath(stars, links) {
 }
 
 /**
+ * Groups stars into parallel-executable waves using layered topological
+ * sorting. Layer N contains every star whose prerequisites are all in layers
+ * < N — i.e. the work that can be tackled concurrently once the previous
+ * wave is complete. Within a layer, stars are ranked by priority score so
+ * dashboards can highlight the most impactful work first.
+ *
+ * Stars participating in cycles are appended in a final "unresolved" layer
+ * so the output always covers every star.
+ */
+export function executionLayers(stars, links) {
+  const byId = new Map(stars.map((s) => [s.id, s]));
+  const inDegree = new Map(stars.map((s) => [s.id, 0]));
+  const successors = new Map(stars.map((s) => [s.id, []]));
+
+  for (const { from, to } of links) {
+    if (byId.has(from) && byId.has(to)) {
+      successors.get(from).push(to);
+      inDegree.set(to, inDegree.get(to) + 1);
+    }
+  }
+
+  const byScore = (a, b) => priorityScore(b) - priorityScore(a);
+  const layers = [];
+  let frontier = stars.filter((s) => inDegree.get(s.id) === 0);
+
+  while (frontier.length) {
+    layers.push([...frontier].sort(byScore));
+    const next = [];
+    for (const star of frontier) {
+      for (const toId of successors.get(star.id)) {
+        const deg = inDegree.get(toId) - 1;
+        inDegree.set(toId, deg);
+        if (deg === 0) next.push(byId.get(toId));
+      }
+    }
+    frontier = next;
+  }
+
+  const placed = new Set(layers.flat().map((s) => s.id));
+  const unresolved = stars.filter((s) => !placed.has(s.id));
+  if (unresolved.length) layers.push(unresolved.sort(byScore));
+  return layers;
+}
+
+/**
  * Returns a health snapshot of the constellation suitable for agent status
  * checks, dashboards, or automated evaluation loops.
  */
