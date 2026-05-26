@@ -91,6 +91,60 @@ export function blockedActions(stars, links) {
 }
 
 /**
+ * Returns the longest dependency chain in the constellation — the "critical
+ * path" that bounds the minimum number of sequential steps required to launch
+ * every dependent star. Stars on this path are the highest-leverage targets:
+ * slipping any of them slips the overall delivery date.
+ *
+ * Returns an array of star references in execution order (prerequisite first,
+ * terminal last). Returns an empty array if no chain of two or more linked
+ * stars exists. Stars participating in cycles are excluded from the search
+ * via topological filtering, so the function always terminates.
+ */
+export function criticalPath(stars, links) {
+  const byId = new Map(stars.map((s) => [s.id, s]));
+  const successors = new Map(stars.map((s) => [s.id, []]));
+  const inDegree = new Map(stars.map((s) => [s.id, 0]));
+
+  for (const { from, to } of links) {
+    if (byId.has(from) && byId.has(to)) {
+      successors.get(from).push(to);
+      inDegree.set(to, inDegree.get(to) + 1);
+    }
+  }
+
+  // Kahn's topological order; cycle-participants never enter the queue.
+  const order = [];
+  const queue = [...inDegree.entries()].filter(([, d]) => d === 0).map(([id]) => id);
+  while (queue.length) {
+    const id = queue.shift();
+    order.push(id);
+    for (const next of successors.get(id)) {
+      const d = inDegree.get(next) - 1;
+      inDegree.set(next, d);
+      if (d === 0) queue.push(next);
+    }
+  }
+
+  // Longest path via DP over the topological order.
+  const longest = new Map(order.map((id) => [id, [id]]));
+  for (const id of order) {
+    const here = longest.get(id);
+    for (const next of successors.get(id)) {
+      if (!longest.has(next)) continue;
+      const candidate = [...here, next];
+      if (candidate.length > longest.get(next).length) longest.set(next, candidate);
+    }
+  }
+
+  let best = [];
+  for (const path of longest.values()) {
+    if (path.length > best.length) best = path;
+  }
+  return best.length < 2 ? [] : best.map((id) => byId.get(id));
+}
+
+/**
  * Returns a health snapshot of the constellation suitable for agent status
  * checks, dashboards, or automated evaluation loops.
  */

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { planExecutionOrder, nextActions, blockedActions, constellationHealth, auditDependencyPlan, buildExecutionReport } from "../js/agent.js";
+import { planExecutionOrder, nextActions, blockedActions, criticalPath, constellationHealth, auditDependencyPlan, buildExecutionReport } from "../js/agent.js";
 import { normalizeStar, normalizeLink } from "../js/model.js";
 
 const s = (id, overrides = {}) =>
@@ -117,6 +117,45 @@ test("blockedActions ranks results by priority score descending", () => {
     [l("dep", "low"), l("dep", "high")],
   );
   assert.equal(blocked[0].star.id, "high");
+});
+
+// criticalPath --------------------------------------------------------------
+
+test("criticalPath returns the linear chain when one exists", () => {
+  const stars = [s("a"), s("b"), s("c")];
+  const path = criticalPath(stars, [l("a", "b"), l("b", "c")]);
+  assert.deepEqual(path.map((p) => p.id), ["a", "b", "c"]);
+});
+
+test("criticalPath picks the longest of several parallel chains", () => {
+  const stars = [s("a"), s("b"), s("c"), s("d"), s("e")];
+  // chain 1: a → b (length 2); chain 2: c → d → e (length 3)
+  const path = criticalPath(stars, [l("a", "b"), l("c", "d"), l("d", "e")]);
+  assert.deepEqual(path.map((p) => p.id), ["c", "d", "e"]);
+});
+
+test("criticalPath traverses a diamond and returns a three-star path", () => {
+  const stars = [s("a"), s("b"), s("c"), s("d")];
+  // a → b → d and a → c → d both have length 3
+  const path = criticalPath(stars, [l("a", "b"), l("a", "c"), l("b", "d"), l("c", "d")]);
+  assert.equal(path.length, 3);
+  assert.equal(path[0].id, "a");
+  assert.equal(path[2].id, "d");
+});
+
+test("criticalPath returns empty for a constellation with no links", () => {
+  assert.deepEqual(criticalPath([s("a"), s("b")], []), []);
+});
+
+test("criticalPath returns empty for an empty constellation", () => {
+  assert.deepEqual(criticalPath([], []), []);
+});
+
+test("criticalPath terminates and ignores stars participating in cycles", () => {
+  const stars = [s("a"), s("b"), s("c"), s("d")];
+  // c ↔ d is a cycle; a → b is a real chain
+  const path = criticalPath(stars, [l("a", "b"), l("c", "d"), l("d", "c")]);
+  assert.deepEqual(path.map((p) => p.id), ["a", "b"]);
 });
 
 // constellationHealth -------------------------------------------------------
