@@ -20,10 +20,16 @@ function makeState(overrides = {}) {
 }
 
 test("hydrate fills defaults and normalizes nested collections", () => {
-  const state = hydrate({ stars: [{ title: "x" }], links: [{ from: "a", to: "b" }] });
+  const state = hydrate({
+    stars: [
+      { id: "a", title: "x" },
+      { id: "b", title: "y" },
+    ],
+    links: [{ from: "a", to: "b" }],
+  });
   assert.equal(state.mapTitle, "My strategy constellation");
   assert.equal(state.ui.view, "sky");
-  assert.match(state.stars[0].id, /^star_/);
+  assert.equal(state.stars[0].id, "a");
   assert.equal(state.stars[0].kind, "bet");
   assert.equal(state.links[0].label, "supports");
 });
@@ -32,6 +38,24 @@ test("hydrate coerces non-array stars and links to empty arrays", () => {
   const state = hydrate({ stars: "nope", links: null });
   assert.deepEqual(state.stars, []);
   assert.deepEqual(state.links, []);
+});
+
+test("hydrate keeps only links between known distinct stars and drops duplicates", () => {
+  const state = hydrate({
+    stars: [
+      { id: "a", title: "Alpha" },
+      { id: "b", title: "Beta" },
+    ],
+    links: [
+      { id: "valid", from: "a", to: "b", label: "  unlocks  " },
+      { id: "dupe", from: "a", to: "b", label: "unlocks" },
+      { id: "self", from: "a", to: "a", label: "loops" },
+      { id: "missing-from", from: "ghost", to: "b", label: "haunts" },
+      { id: "missing-to", from: "a", to: "ghost", label: "vanishes" },
+    ],
+  });
+
+  assert.deepEqual(state.links, [{ id: "valid", from: "a", to: "b", label: "unlocks" }]);
 });
 
 test("selectVisibleStars applies kind, status, and search filters together", () => {

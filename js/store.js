@@ -29,12 +29,34 @@ function commit(next) {
   emit();
 }
 
+function sanitizeLinks(rawLinks, stars) {
+  if (!Array.isArray(rawLinks)) return [];
+
+  const starIds = new Set(stars.map((star) => star.id));
+  const seen = new Set();
+  const links = [];
+
+  for (const rawLink of rawLinks) {
+    const link = normalizeLink(rawLink);
+    if (!starIds.has(link.from) || !starIds.has(link.to) || link.from === link.to) continue;
+
+    const signature = `${link.from}\u0000${link.to}\u0000${link.label}`;
+    if (seen.has(signature)) continue;
+    seen.add(signature);
+    links.push(link);
+  }
+
+  return links;
+}
+
 export function hydrate(input = {}) {
+  const stars = Array.isArray(input.stars) ? input.stars.map(normalizeStar) : [];
+
   return {
     ...defaultState(),
     ...input,
-    stars: Array.isArray(input.stars) ? input.stars.map(normalizeStar) : [],
-    links: Array.isArray(input.links) ? input.links.map(normalizeLink) : [],
+    stars,
+    links: sanitizeLinks(input.links, stars),
     ui: {
       ...defaultState().ui,
       ...(input.ui || {}),
