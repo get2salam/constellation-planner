@@ -49,6 +49,11 @@ function sanitizeLinks(rawLinks, stars) {
   return links;
 }
 
+function hasKnownEndpoints(link, stars = state.stars) {
+  const starIds = new Set(stars.map((star) => star.id));
+  return starIds.has(link.from) && starIds.has(link.to);
+}
+
 export function hydrate(input = {}) {
   const stars = Array.isArray(input.stars) ? input.stars.map(normalizeStar) : [];
 
@@ -104,7 +109,7 @@ export const actions = {
   },
   addLink(input = {}) {
     const link = normalizeLink(input);
-    if (!link.from || !link.to || link.from === link.to) return;
+    if (!link.from || !link.to || link.from === link.to || !hasKnownEndpoints(link)) return;
     const exists = state.links.some((entry) => entry.from === link.from && entry.to === link.to && entry.label === link.label);
     if (exists) return;
     commit({ ...state, links: [...state.links, link] });

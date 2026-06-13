@@ -1,11 +1,35 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  actions,
+  getState,
   hydrate,
+  initStore,
   selectRankedStars,
   selectStats,
   selectVisibleStars,
 } from "../js/store.js";
+
+function installLocalStorageMock() {
+  const writes = [];
+  const data = new Map();
+  globalThis.localStorage = {
+    getItem(key) {
+      return data.has(key) ? data.get(key) : null;
+    },
+    setItem(key, value) {
+      writes.push({ key, value });
+      data.set(key, String(value));
+    },
+    removeItem(key) {
+      data.delete(key);
+    },
+    clear() {
+      data.clear();
+    },
+  };
+  return writes;
+}
 
 function makeState(overrides = {}) {
   return hydrate({
@@ -56,6 +80,30 @@ test("hydrate keeps only links between known distinct stars and drops duplicates
   });
 
   assert.deepEqual(state.links, [{ id: "valid", from: "a", to: "b", label: "unlocks" }]);
+});
+
+test("addLink rejects dangling endpoints before persisting a route", () => {
+  const writes = installLocalStorageMock();
+  initStore({
+    seed: () => ({
+      stars: [
+        { id: "a", title: "Alpha" },
+        { id: "b", title: "Beta" },
+      ],
+      links: [],
+    }),
+  });
+
+  writes.length = 0;
+  actions.addLink({ from: "a", to: "ghost", label: "blocks" });
+  actions.addLink({ from: "ghost", to: "b", label: "blocks" });
+  actions.addLink({ from: "a", to: "a", label: "loops" });
+  assert.deepEqual(getState().links, []);
+  assert.equal(writes.length, 0);
+
+  actions.addLink({ id: "valid", from: "a", to: "b", label: "blocks" });
+  assert.deepEqual(getState().links, [{ id: "valid", from: "a", to: "b", label: "blocks" }]);
+  assert.equal(writes.length, 1);
 });
 
 test("selectVisibleStars applies kind, status, and search filters together", () => {
