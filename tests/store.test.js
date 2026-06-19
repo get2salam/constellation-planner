@@ -64,6 +64,28 @@ test("hydrate coerces non-array stars and links to empty arrays", () => {
   assert.deepEqual(state.links, []);
 });
 
+test("hydrate sanitizes imported UI state before filters render", () => {
+  const state = hydrate({
+    stars: [{ id: "a", title: "Alpha" }],
+    ui: {
+      selectedId: "ghost",
+      kindFilter: "unknown",
+      statusFilter: "lost",
+      search: null,
+      view: "table",
+    },
+  });
+
+  assert.deepEqual(state.ui, {
+    selectedId: null,
+    kindFilter: "all",
+    statusFilter: "all",
+    search: "",
+    view: "sky",
+  });
+  assert.deepEqual(selectVisibleStars(state).map((star) => star.id), ["a"]);
+});
+
 test("hydrate keeps only links between known distinct stars and drops duplicates", () => {
   const state = hydrate({
     stars: [

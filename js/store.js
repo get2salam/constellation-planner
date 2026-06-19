@@ -1,8 +1,10 @@
 import {
   defaultState,
+  KINDS,
   normalizeLink,
   normalizeStar,
   priorityScore,
+  STATUSES,
   STORAGE_KEY,
 } from "./model.js";
 
@@ -49,6 +51,20 @@ function sanitizeLinks(rawLinks, stars) {
   return links;
 }
 
+function normalizeUi(rawUi, stars) {
+  const defaults = defaultState().ui;
+  const ui = rawUi && typeof rawUi === "object" && !Array.isArray(rawUi) ? rawUi : {};
+  const starIds = new Set(stars.map((star) => star.id));
+
+  return {
+    selectedId: starIds.has(ui.selectedId) ? ui.selectedId : defaults.selectedId,
+    kindFilter: ui.kindFilter === "all" || KINDS.includes(ui.kindFilter) ? ui.kindFilter : defaults.kindFilter,
+    statusFilter: ui.statusFilter === "all" || STATUSES.includes(ui.statusFilter) ? ui.statusFilter : defaults.statusFilter,
+    search: typeof ui.search === "string" ? ui.search : defaults.search,
+    view: ui.view === "sky" || ui.view === "roadmap" ? ui.view : defaults.view,
+  };
+}
+
 function hasKnownEndpoints(link, stars = state.stars) {
   const starIds = new Set(stars.map((star) => star.id));
   return starIds.has(link.from) && starIds.has(link.to);
@@ -62,10 +78,7 @@ export function hydrate(input = {}) {
     ...input,
     stars,
     links: sanitizeLinks(input.links, stars),
-    ui: {
-      ...defaultState().ui,
-      ...(input.ui || {}),
-    },
+    ui: normalizeUi(input.ui, stars),
     meta: {
       ...defaultState().meta,
       ...(input.meta || {}),
