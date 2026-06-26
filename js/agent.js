@@ -1,5 +1,24 @@
 import { priorityScore, STATUSES } from "./model.js";
 
+function dependencyPrerequisites(stars, links) {
+  const starIds = new Set(stars.map((s) => s.id));
+  const prereqs = new Map(stars.map((s) => [s.id, []]));
+
+  for (const { from, to } of links) {
+    if (from !== to && starIds.has(from) && prereqs.has(to)) {
+      prereqs.get(to).push(from);
+    }
+  }
+
+  return prereqs;
+}
+
+function actionLimit(limit) {
+  if (limit === undefined) return 3;
+  const numeric = Number(limit);
+  return Number.isFinite(numeric) ? Math.max(0, Math.trunc(numeric)) : 0;
+}
+
 /**
  * Returns stars in dependency-aware execution order using Kahn's algorithm.
  * A link "from → to" means `from` must complete before `to` can start.
@@ -50,10 +69,7 @@ export function nextActions(stars, links, limit = 3) {
   const launched = new Set(
     stars.filter((s) => s.status === "launch").map((s) => s.id),
   );
-  const prereqs = new Map(stars.map((s) => [s.id, []]));
-  for (const { from, to } of links) {
-    if (prereqs.has(to)) prereqs.get(to).push(from);
-  }
+  const prereqs = dependencyPrerequisites(stars, links);
 
   return stars
     .filter(
@@ -62,7 +78,7 @@ export function nextActions(stars, links, limit = 3) {
         prereqs.get(s.id).every((id) => launched.has(id)),
     )
     .sort((a, b) => priorityScore(b) - priorityScore(a))
-    .slice(0, limit);
+    .slice(0, actionLimit(limit));
 }
 
 /**
@@ -74,10 +90,7 @@ export function nextActions(stars, links, limit = 3) {
  */
 export function blockedActions(stars, links) {
   const byId = new Map(stars.map((s) => [s.id, s]));
-  const prereqs = new Map(stars.map((s) => [s.id, []]));
-  for (const { from, to } of links) {
-    if (prereqs.has(to) && byId.has(from)) prereqs.get(to).push(from);
-  }
+  const prereqs = dependencyPrerequisites(stars, links);
 
   const blocked = [];
   for (const star of stars) {

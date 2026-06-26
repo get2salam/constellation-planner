@@ -64,6 +64,18 @@ test("nextActions respects the limit parameter", () => {
   assert.equal(nextActions(stars, [], 2).length, 2);
 });
 
+test("nextActions treats negative and non-numeric limits as zero", () => {
+  const stars = [s("a", { status: "spark" }), s("b", { status: "spark" })];
+  assert.deepEqual(nextActions(stars, [], -1), []);
+  assert.deepEqual(nextActions(stars, [], "many"), []);
+});
+
+test("nextActions ignores broken prerequisite links instead of blocking valid stars", () => {
+  const ready = s("ready", { status: "spark" });
+  const ghostLink = normalizeLink({ from: "missing", to: "ready" });
+  assert.deepEqual(nextActions([ready], [ghostLink]).map((star) => star.id), ["ready"]);
+});
+
 test("nextActions ranks results by priority score descending", () => {
   const cheap = s("cheap", { impact: 1, effort: 9, status: "spark" });
   const pricey = s("pricey", { impact: 9, effort: 1, status: "spark" });
